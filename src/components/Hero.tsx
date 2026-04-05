@@ -190,121 +190,95 @@ function ExplosionCards({
   );
 }
 
-// ─── Mobile Swipeable Carousel ───────────────────────────────────────
-function MobileCarousel() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [dragging, setDragging] = useState(false);
-  const CARD_W = 240;
-  const GAP = 14;
+// ─── Mobile Stacked Card Deck with Swipe ─────────────────────────────
+function MobileCardDeck() {
+  const [topIndex, setTopIndex] = useState(0);
 
   const handleDragEnd = useCallback(
     (_: unknown, info: PanInfo) => {
-      setDragging(false);
-      const threshold = 40;
-      if (info.offset.x < -threshold && activeIndex < cards.length - 1) {
-        setActiveIndex((p) => p + 1);
-      } else if (info.offset.x > threshold && activeIndex > 0) {
-        setActiveIndex((p) => p - 1);
+      const threshold = 50;
+      if (Math.abs(info.offset.x) > threshold) {
+        // Send top card to back
+        setTopIndex((p) => (p + 1) % cards.length);
       }
     },
-    [activeIndex]
+    []
   );
 
-  const dragX = -(activeIndex * (CARD_W + GAP));
+  // Build visual stack order: topIndex is on top, rest stacked behind
+  const getStackPosition = (i: number) => {
+    const offset = (i - topIndex + cards.length) % cards.length;
+    return offset;
+  };
 
   return (
     <motion.div
-      className="w-full mt-6"
-      initial={{ opacity: 0, y: 30 }}
+      className="w-full mt-8 mb-4"
+      initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: 0.6 }}
     >
-      {/* Carousel viewport */}
-      <div className="overflow-hidden mx-auto" style={{ maxWidth: CARD_W + 32 }}>
-        <motion.div
-          className="flex"
-          style={{ gap: GAP }}
-          animate={{ x: dragX }}
-          transition={{ type: "spring", stiffness: 300, damping: 35 }}
-          drag="x"
-          dragConstraints={{ left: 0, right: 0 }}
-          dragElastic={0.12}
-          onDragStart={() => setDragging(true)}
-          onDragEnd={handleDragEnd}
-        >
-          {cards.map((card, i) => {
-            const isActive = i === activeIndex;
-            return (
-              <motion.div
-                key={i}
-                className="flex-shrink-0 rounded-2xl overflow-hidden relative"
-                style={{ width: CARD_W }}
-                animate={{
-                  scale: isActive ? 1 : 0.88,
-                  opacity: isActive ? 1 : 0.35,
-                }}
-                transition={{ type: "spring", stiffness: 300, damping: 30 }}
-              >
-                <div className="aspect-[3/4] relative">
-                  <Image
-                    src={card.src}
-                    alt={card.alt}
-                    fill
-                    sizes="240px"
-                    className="object-cover pointer-events-none"
-                    draggable={false}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.08_0.03_250/0.65)] to-transparent" />
+      {/* Stack container */}
+      <div className="relative mx-auto" style={{ width: 260, height: 360 }}>
+        {cards.map((card, i) => {
+          const stackPos = getStackPosition(i);
+          const isTop = stackPos === 0;
+          // Only show top 4 cards
+          if (stackPos > 3) return null;
 
-                  <AnimatePresence>
-                    {isActive && !dragging && (
-                      <motion.div
-                        className="absolute bottom-4 left-4 right-4"
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.25 }}
-                      >
-                        <div className="text-[9px] tracking-[0.3em] text-white/40 font-[var(--font-display)]">
-                          {String(i + 1).padStart(2, "0")} / {String(cards.length).padStart(2, "0")}
-                        </div>
-                        <div className="text-base font-[var(--font-display)] font-bold text-white mt-0.5">
-                          {card.name}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      </div>
-
-      {/* Dot indicators */}
-      <div className="flex justify-center gap-1.5 mt-4">
-        {cards.map((_, i) => (
-          <button
-            key={i}
-            aria-label={`Go to slide ${i + 1}`}
-            className="p-1"
-            onClick={() => setActiveIndex(i)}
-          >
+          return (
             <motion.div
-              className="rounded-full"
+              key={i}
+              className="absolute inset-0 rounded-2xl overflow-hidden shadow-lg shadow-black/15"
+              style={{ zIndex: cards.length - stackPos }}
               animate={{
-                width: i === activeIndex ? 18 : 5,
-                height: 5,
-                backgroundColor:
-                  i === activeIndex
-                    ? "oklch(0.58 0.20 240)"
-                    : "oklch(0.58 0.20 240 / 0.2)",
+                y: stackPos * 12,
+                scale: 1 - stackPos * 0.04,
+                rotateZ: stackPos === 0 ? 0 : stackPos % 2 === 0 ? 1.5 : -1.5,
+                opacity: stackPos > 2 ? 0.3 : 1,
               }}
-              transition={{ type: "spring", stiffness: 400, damping: 30 }}
-            />
-          </button>
-        ))}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+              // Only top card is draggable
+              {...(isTop
+                ? {
+                    drag: "x",
+                    dragConstraints: { left: 0, right: 0 },
+                    dragElastic: 0.3,
+                    onDragEnd: handleDragEnd,
+                    whileDrag: { scale: 1.03, rotateZ: 0 },
+                  }
+                : {})}
+            >
+              <Image
+                src={card.src}
+                alt={card.alt}
+                fill
+                sizes="260px"
+                className="object-cover pointer-events-none"
+                draggable={false}
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[oklch(0.06_0.02_250/0.6)] to-transparent" />
+
+              {/* Card info — top card only */}
+              {isTop && (
+                <div className="absolute bottom-4 left-4 right-4">
+                  <div className="text-[9px] tracking-[0.3em] text-white/40 font-[var(--font-display)]">
+                    {String(i + 1).padStart(2, "0")} / {String(cards.length).padStart(2, "0")}
+                  </div>
+                  <div className="text-base font-[var(--font-display)] font-bold text-white mt-0.5">
+                    {card.name}
+                  </div>
+                </div>
+              )}
+            </motion.div>
+          );
+        })}
       </div>
+
+      {/* Swipe hint */}
+      <p className="text-center text-[9px] tracking-[0.3em] text-white/15 font-[var(--font-display)] mt-5">
+        SWIPE TO BROWSE
+      </p>
     </motion.div>
   );
 }
@@ -484,33 +458,31 @@ export default function Hero() {
              During explode/collapse: centered explosion animation
              During final: brand text + swipeable carousel below */
           <div className="w-full px-5 pt-24 pb-16">
-            {/* Explosion plays centered, then fades out when final */}
-            <AnimatePresence>
-              {phase !== "final" && (
-                <motion.div
-                  className="flex items-center justify-center"
-                  style={{ minHeight: "60vh" }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-                >
-                  <ExplosionCards phase={phase} isMobile={true} />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Explosion — fades out, text + deck fades in underneath */}
+            <motion.div
+              className="flex items-center justify-center"
+              style={{ minHeight: phase === "final" ? 0 : "55vh" }}
+              animate={{
+                opacity: phase === "final" ? 0 : 1,
+                scale: phase === "final" ? 0.85 : 1,
+                height: phase === "final" ? 0 : "auto",
+              }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            >
+              {phase !== "final" && <ExplosionCards phase={phase} isMobile={true} />}
+            </motion.div>
 
-            {/* After explosion: text + carousel */}
-            <AnimatePresence>
-              {phase === "final" && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.1 }}
-                >
-                  <HeroText show={true} compact />
-                  <MobileCarousel />
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Text + stacked card deck */}
+            <motion.div
+              animate={{
+                opacity: phase === "final" ? 1 : 0,
+                y: phase === "final" ? 0 : 30,
+              }}
+              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: phase === "final" ? 0.2 : 0 }}
+            >
+              <HeroText show={phase === "final"} compact />
+              {phase === "final" && <MobileCardDeck />}
+            </motion.div>
           </div>
         ) : (
           /* ── DESKTOP LAYOUT ──

@@ -246,7 +246,7 @@ function HeroSection() {
           <AnimatePresence mode="popLayout">
             <motion.div
               key={current}
-              className="absolute bottom-0 right-[10%] lg:right-[15%] h-[88vh] w-[50vw] max-w-[550px]"
+              className="absolute bottom-0 right-[5%] lg:right-[15%] h-[75vh] lg:h-[88vh] w-[70vw] lg:w-[50vw] max-w-[550px]"
               // Enters from the right, small & rotated (far away) → walks toward camera → settles center
               initial={{
                 x: "60%",
@@ -273,15 +273,20 @@ function HeroSection() {
               }}
               style={{ transformStyle: "preserve-3d" }}
             >
-              <Image
-                src={models[current].src}
-                alt={models[current].alt}
-                fill
-                sizes="(max-width: 1024px) 70vw, 50vw"
-                className="object-contain object-bottom drop-shadow-2xl"
-                priority
-                draggable={false}
-              />
+              {/* Fixed inner container ensures all models render at same size */}
+              <div className="absolute inset-0 flex items-end justify-center">
+                <div className="relative w-full h-full">
+                  <Image
+                    src={models[current].src}
+                    alt={models[current].alt}
+                    fill
+                    sizes="(max-width: 1024px) 70vw, 50vw"
+                    className="object-contain object-bottom drop-shadow-2xl"
+                    priority
+                    draggable={false}
+                  />
+                </div>
+              </div>
             </motion.div>
           </AnimatePresence>
         </div>
