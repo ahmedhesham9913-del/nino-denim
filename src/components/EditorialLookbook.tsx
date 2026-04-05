@@ -209,33 +209,17 @@ function HeroSection() {
             Crafted for the modern generation. Every pair tells a story of dedication, comfort, and style.
           </motion.p>
 
-          <motion.div
-            className="flex items-center gap-6"
+          <motion.a
+            href="/products"
+            className="inline-block px-8 py-3.5 rounded-full font-[var(--font-display)] text-sm font-semibold tracking-[0.15em] text-white"
+            style={{ background: "oklch(0.48 0.16 240)" }}
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: 0.5 }}
           >
-            <a
-              href="/products"
-              className="inline-block px-8 py-3.5 rounded-full font-[var(--font-display)] text-sm font-semibold tracking-[0.15em] text-white"
-              style={{ background: "oklch(0.48 0.16 240)" }}
-            >
-              EXPLORE
-            </a>
-
-            {/* Dots inline */}
-            <div className="flex gap-2">
-              {models.map((_, i) => (
-                <button key={i} onClick={() => setCurrent(i)} aria-label={`Model ${i + 1}`} className="p-0.5">
-                  <div className="rounded-full transition-all duration-300" style={{
-                    width: i === current ? 22 : 7, height: 7,
-                    backgroundColor: i === current ? "oklch(0.48 0.16 240)" : "oklch(0.48 0.16 240 / 0.2)",
-                  }} />
-                </button>
-              ))}
-            </div>
-          </motion.div>
+            EXPLORE
+          </motion.a>
         </div>
 
         {/* ── LAYER 2 (front): Model — 3D walk-through animation ── */}
@@ -273,39 +257,19 @@ function HeroSection() {
               }}
               style={{ transformStyle: "preserve-3d" }}
             >
-              {/* Fixed inner container ensures all models render at same size */}
-              <div className="absolute inset-0 flex items-end justify-center">
-                <div className="relative w-full h-full">
-                  <Image
-                    src={models[current].src}
-                    alt={models[current].alt}
-                    fill
-                    sizes="(max-width: 1024px) 70vw, 50vw"
-                    className="object-contain object-bottom drop-shadow-2xl"
-                    priority
-                    draggable={false}
-                  />
-                </div>
-              </div>
+              <Image
+                src={models[current].src}
+                alt={models[current].alt}
+                fill
+                sizes="(max-width: 1024px) 70vw, 50vw"
+                className="object-contain object-bottom drop-shadow-2xl"
+                priority
+                draggable={false}
+              />
             </motion.div>
           </AnimatePresence>
         </div>
 
-        {/* ── Model name label ── */}
-        <div className="absolute bottom-8 right-8 z-30">
-          <AnimatePresence mode="wait">
-            <motion.span
-              key={current}
-              className="text-[10px] tracking-[0.3em] text-nino-800/20 font-[var(--font-display)] font-medium"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.4 }}
-            >
-              LOOK {String(current + 1).padStart(2, "0")} / {String(models.length).padStart(2, "0")}
-            </motion.span>
-          </AnimatePresence>
-        </div>
       </div>
     </section>
   );
