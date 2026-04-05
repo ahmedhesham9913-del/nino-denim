@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 
 const stages = [
   {
@@ -181,12 +181,6 @@ export default function DenimJourney() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const headerInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  const bgTextX = useTransform(scrollYProgress, [0, 1], [50, -300]);
 
   return (
     <section
@@ -197,14 +191,13 @@ export default function DenimJourney() {
       {/* Top — no fade, previous section is also dark */}
 
       {/* Sliding background text */}
-      <motion.div
+      <div
         className="absolute top-[12%] whitespace-nowrap pointer-events-none select-none"
-        style={{ x: bgTextX }}
       >
         <span className="text-[clamp(8rem,22vw,18rem)] font-[var(--font-display)] font-black text-white/[0.012] tracking-tighter leading-none">
           CRAFT &mdash; PROCESS &mdash; CRAFT &mdash; PROCESS
         </span>
-      </motion.div>
+      </div>
 
       {/* Section header */}
       <div className="max-w-[1400px] mx-auto px-6 mb-28 md:mb-40 relative z-10">

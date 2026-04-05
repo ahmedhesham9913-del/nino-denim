@@ -11,6 +11,7 @@ interface Product {
   price: number;
   originalPrice: number;
   colors: string[];
+  sizes: string[];
   tag?: string;
   image: string;
   featured?: boolean;
@@ -24,6 +25,7 @@ const products: Product[] = [
     price: 79,
     originalPrice: 110,
     colors: ["#2563eb", "#1e293b", "#78716c"],
+    sizes: ["28", "30", "32", "34"],
     tag: "BESTSELLER",
     image: "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=800",
     featured: true,
@@ -35,6 +37,7 @@ const products: Product[] = [
     price: 89,
     originalPrice: 129,
     colors: ["#1e293b", "#2563eb", "#0f172a"],
+    sizes: ["28", "30", "32", "34"],
     tag: "NEW",
     image: "https://images.pexels.com/photos/17745134/pexels-photo-17745134.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
@@ -45,6 +48,7 @@ const products: Product[] = [
     price: 95,
     originalPrice: 135,
     colors: ["#2563eb", "#0f172a", "#475569"],
+    sizes: ["24", "26", "28", "30"],
     image: "https://images.pexels.com/photos/4210866/pexels-photo-4210866.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
   {
@@ -54,6 +58,7 @@ const products: Product[] = [
     price: 85,
     originalPrice: 120,
     colors: ["#78716c", "#1e293b", "#2563eb"],
+    sizes: ["28", "30", "32", "36"],
     tag: "TRENDING",
     image: "https://images.pexels.com/photos/6786614/pexels-photo-6786614.jpeg?auto=compress&cs=tinysrgb&w=800",
   },
@@ -64,6 +69,7 @@ const products: Product[] = [
     price: 92,
     originalPrice: 125,
     colors: ["#0f172a", "#2563eb", "#78716c"],
+    sizes: ["24", "26", "28", "30"],
     image: "https://images.pexels.com/photos/17630811/pexels-photo-17630811.jpeg?auto=compress&cs=tinysrgb&w=800",
     featured: true,
   },
@@ -74,6 +80,7 @@ const products: Product[] = [
     price: 105,
     originalPrice: 150,
     colors: ["#2563eb", "#475569", "#1e293b"],
+    sizes: ["30", "32", "34", "36"],
     tag: "LIMITED",
     image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?w=800&q=80",
   },
@@ -93,6 +100,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
   };
 
   const isFeatured = product.featured;
+  const tiltStrength = isFeatured ? 5 : 8;
 
   return (
     <motion.div
@@ -114,20 +122,23 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
       onMouseMove={handleMouseMove}
     >
       <motion.div
-        className="preserve-3d relative rounded-2xl overflow-hidden h-full"
+        className="preserve-3d relative rounded-2xl overflow-hidden bg-white h-full"
         animate={{
-          rotateY: mousePos.x * (isFeatured ? 5 : 8),
-          rotateX: -mousePos.y * (isFeatured ? 5 : 8),
+          rotateY: mousePos.x * tiltStrength,
+          rotateX: -mousePos.y * tiltStrength,
         }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
-        data-cursor-hover
       >
-        {/* Image */}
-        <div className={`relative overflow-hidden bg-[#f2f2f2] ${isFeatured ? "aspect-[4/5]" : "aspect-[3/4]"}`}>
+        {/* ── Image area ── */}
+        <div className={`relative overflow-hidden bg-[oklch(0.96_0.005_240)] ${isFeatured ? "aspect-[4/5]" : "aspect-[3/4]"}`}>
+          {/* Image — shifts UP on hover */}
           <motion.div
             className="absolute inset-0"
-            animate={{ scale: isHovered ? 1.06 : 1 }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+            animate={{
+              y: isHovered ? (isFeatured ? -40 : -30) : 0,
+              scale: isHovered ? 1.04 : 1,
+            }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <Image
               src={product.image}
@@ -141,7 +152,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           {/* Tag */}
           {product.tag && (
             <motion.div
-              className={`absolute top-5 left-5 px-4 py-2 rounded-full font-bold tracking-[0.15em] bg-white/90 text-nino-700 backdrop-blur-sm border border-nino-200/30 ${isFeatured ? "text-xs" : "text-[10px]"}`}
+              className={`absolute top-5 left-5 z-10 px-4 py-2 rounded-full font-bold tracking-[0.15em] bg-white/90 text-nino-700 border border-nino-200/30 ${isFeatured ? "text-xs" : "text-[10px]"}`}
               initial={{ opacity: 0, scale: 0 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true }}
@@ -151,57 +162,25 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             </motion.div>
           )}
 
-          {/* Oversized product index number — featured cards only */}
+          {/* Oversized index — featured only */}
           {isFeatured && (
             <div className="absolute top-4 right-6 font-[var(--font-display)] text-[8rem] font-black text-white/[0.04] leading-none select-none pointer-events-none">
               {String(product.id).padStart(2, "0")}
             </div>
           )}
 
-          {/* Quick actions */}
-          <motion.div
-            className="absolute inset-0 flex items-end p-5"
-            style={{ background: "linear-gradient(to top, oklch(0.12 0.04 260 / 0.55) 0%, transparent 50%)" }}
-            initial={false}
-            animate={{ opacity: isHovered ? 1 : 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            <div className="w-full flex gap-2">
-              <motion.button
-                className={`flex-1 rounded-xl font-[var(--font-display)] font-semibold tracking-wider text-white bg-nino-600/90 backdrop-blur-sm ${isFeatured ? "py-4 text-sm" : "py-3 text-xs"}`}
-                initial={{ y: 25 }}
-                animate={{ y: isHovered ? 0 : 25 }}
-                transition={{ delay: 0.03, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                whileTap={{ scale: 0.96 }}
-              >
-                ADD TO CART
-              </motion.button>
-              <motion.button
-                aria-label="Add to wishlist"
-                className={`rounded-xl border border-white/25 text-white bg-white/10 backdrop-blur-sm ${isFeatured ? "py-4 px-5" : "py-3 px-4"}`}
-                initial={{ y: 25 }}
-                animate={{ y: isHovered ? 0 : 25 }}
-                transition={{ delay: 0.08, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                whileTap={{ scale: 0.96 }}
-              >
-                <svg width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24">
-                  <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-                </svg>
-              </motion.button>
-            </div>
-          </motion.div>
-
           {/* Shine sweep */}
           <motion.div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.08) 50%, transparent 60%)" }}
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{ background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%)" }}
             animate={{ x: isHovered ? "100%" : "-100%" }}
-            transition={{ duration: 0.8, ease: "easeInOut" }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
           />
         </div>
 
-        {/* Card info */}
-        <div className={`bg-white ${isFeatured ? "p-6" : "p-5"}`}>
+        {/* ── Info section — always visible ── */}
+        <div className={`bg-white relative z-10 ${isFeatured ? "px-6 pt-5" : "px-5 pt-4"}`}>
+          {/* Name + price row */}
           <div className="flex items-start justify-between">
             <div>
               <p className={`text-nino-800/25 tracking-[0.15em] font-[var(--font-display)] mb-1 ${isFeatured ? "text-xs" : "text-[11px]"}`}>
@@ -221,19 +200,83 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             </div>
           </div>
 
-          <div className="flex gap-2.5 mt-4">
-            {product.colors.map((color, ci) => (
-              <motion.div
-                key={ci}
-                className={`rounded-full cursor-pointer border ${isFeatured ? "w-5 h-5" : "w-4 h-4"}`}
-                style={{
-                  backgroundColor: color,
-                  borderColor: ci === 0 ? "oklch(0.58 0.20 240 / 0.5)" : "oklch(0.88 0.02 240)",
-                }}
-                whileHover={{ scale: 1.4 }}
-                transition={{ type: "spring", stiffness: 400, damping: 15 }}
-              />
-            ))}
+          {/* ── Expandable details — revealed on hover ── */}
+          <div
+            className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ gridTemplateRows: isHovered ? "1fr" : "0fr" }}
+          >
+            <div className="overflow-hidden">
+              <div className={`${isFeatured ? "pt-5 pb-6" : "pt-4 pb-5"}`}>
+                {/* Sizes */}
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">
+                    SIZE
+                  </span>
+                  <div className="flex gap-1.5">
+                    {product.sizes.map((size, si) => (
+                      <button
+                        key={size}
+                        className={`min-w-[32px] h-[30px] rounded-lg text-[11px] font-[var(--font-display)] font-semibold transition-colors duration-200 ${
+                          si === 0
+                            ? "bg-nino-950 text-white"
+                            : "bg-nino-100/60 text-nino-800/50 hover:bg-nino-200/60 hover:text-nino-800/80"
+                        }`}
+                      >
+                        {size}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Colors */}
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">
+                    COLOR
+                  </span>
+                  <div className="flex gap-2">
+                    {product.colors.map((color, ci) => (
+                      <div
+                        key={ci}
+                        className={`w-5 h-5 rounded-full border-2 cursor-pointer transition-transform duration-200 hover:scale-125 ${
+                          ci === 0 ? "border-nino-500/50 scale-110" : "border-nino-200/60"
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                {/* Buy button */}
+                <button
+                  className={`w-full rounded-xl font-[var(--font-display)] font-semibold tracking-[0.12em] text-white bg-nino-950 hover:bg-nino-800 active:scale-[0.98] transition-all duration-200 ${
+                    isFeatured ? "py-3.5 text-sm" : "py-3 text-xs"
+                  }`}
+                >
+                  BUY NOW
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* ── Default bottom padding when NOT hovered ── */}
+          <div
+            className="transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] grid"
+            style={{ gridTemplateRows: isHovered ? "0fr" : "1fr" }}
+          >
+            <div className="overflow-hidden">
+              <div className="flex gap-2.5 pb-5">
+                {product.colors.map((color, ci) => (
+                  <div
+                    key={ci}
+                    className={`rounded-full border ${isFeatured ? "w-5 h-5" : "w-4 h-4"}`}
+                    style={{
+                      backgroundColor: color,
+                      borderColor: ci === 0 ? "oklch(0.58 0.20 240 / 0.5)" : "oklch(0.88 0.02 240)",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
@@ -282,33 +325,24 @@ export default function ProductCards() {
           </div>
 
           <motion.a
-            href="#"
-            data-cursor-hover
+            href="/products"
             className="text-sm font-[var(--font-display)] font-medium tracking-[0.15em] text-nino-600 hover:text-nino-800 transition-colors flex items-center gap-2"
             initial={{ opacity: 0 }}
             animate={titleInView ? { opacity: 1 } : {}}
             transition={{ delay: 0.5 }}
           >
             VIEW ALL
-            <motion.span
-              className="inline-block"
-              animate={{ x: [0, 5, 0] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            >
-              →
-            </motion.span>
+            <span className="inline-block">→</span>
           </motion.a>
         </div>
       </div>
 
-      {/* Mixed-size grid — featured cards span 2 cols */}
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 auto-rows-auto">
         {products.map((product, i) => (
           <ProductCard key={product.id} product={product} index={i} />
         ))}
       </div>
 
-      {/* Bottom separator */}
       <div className="max-w-[1400px] mx-auto mt-28">
         <div className="h-[1px] bg-nino-200/30" />
       </div>

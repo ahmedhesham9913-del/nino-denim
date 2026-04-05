@@ -28,7 +28,7 @@ export default function Marquee() {
         {repeated.map((item, i) => (
           <span
             key={i}
-            className="font-[var(--font-display)] text-[clamp(1rem,2.5vw,1.5rem)] tracking-[0.25em] text-nino-900/[0.07] font-bold uppercase flex items-center gap-12"
+            className="font-[var(--font-display)] text-[clamp(1rem,2.5vw,1.5rem)] tracking-[0.25em] text-nino-900/30 font-bold uppercase flex items-center gap-12"
           >
             {item}
             <span className="w-2 h-2 rounded-full bg-nino-500/30 inline-block" />

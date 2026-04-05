@@ -1,11 +1,9 @@
 "use client";
 
-import { useRef, useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Image from "next/image";
 import {
   motion,
-  useScroll,
-  useTransform,
   AnimatePresence,
   type PanInfo,
 } from "framer-motion";
@@ -457,17 +455,8 @@ function HeroText({ show, compact }: { show: boolean; compact?: boolean }) {
 
 // ─── Main Hero ───────────────────────────────────────────────────────
 export default function Hero() {
-  const containerRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<Phase>("initial");
   const isMobile = useIsMobile();
-
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start start", "end start"],
-  });
-
-  const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.94]);
 
   // Same animation sequence on both mobile and desktop
   useEffect(() => {
@@ -482,77 +471,14 @@ export default function Hero() {
 
   return (
     <section
-      ref={containerRef}
       className="relative min-h-dvh lg:min-h-[110vh] flex items-center overflow-hidden"
       style={{ background: "oklch(0.13 0.03 250)" }}
     >
-      {/* ── Background blobs ── */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          className="absolute w-[140%] h-[140%] -top-[20%] -left-[20%]"
-          animate={{ scale: [1, 1.08, 1.02, 1.06, 1], rotate: [0, 3, -2, 1, 0] }}
-          transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <svg viewBox="0 0 1000 1000" className="w-full h-full" preserveAspectRatio="none">
-            <defs>
-              <linearGradient id="blob-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="oklch(0.18 0.06 250)" />
-                <stop offset="50%" stopColor="oklch(0.14 0.04 255)" />
-                <stop offset="100%" stopColor="oklch(0.11 0.03 245)" />
-              </linearGradient>
-              <filter id="blob-blur"><feGaussianBlur in="SourceGraphic" stdDeviation="2" /></filter>
-            </defs>
-            <motion.path
-              fill="url(#blob-grad)"
-              filter="url(#blob-blur)"
-              animate={{
-                d: [
-                  "M 500 200 C 650 180, 820 280, 800 450 C 780 620, 680 780, 500 800 C 320 820, 180 700, 200 500 C 220 300, 350 220, 500 200 Z",
-                  "M 500 180 C 680 200, 840 320, 810 480 C 780 640, 650 800, 480 810 C 310 820, 160 680, 190 480 C 220 280, 320 160, 500 180 Z",
-                  "M 520 200 C 670 160, 830 300, 820 460 C 810 620, 700 790, 510 800 C 320 810, 170 690, 180 510 C 190 330, 370 240, 520 200 Z",
-                  "M 500 200 C 650 180, 820 280, 800 450 C 780 620, 680 780, 500 800 C 320 820, 180 700, 200 500 C 220 300, 350 220, 500 200 Z",
-                ],
-              }}
-              transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </svg>
-        </motion.div>
-
-        <motion.div
-          className="absolute w-[80%] h-[80%] top-[10%] right-[-15%] opacity-40"
-          animate={{ scale: [1, 1.1, 0.95, 1.05, 1], rotate: [0, -4, 2, -1, 0] }}
-          transition={{ duration: 14, repeat: Infinity, ease: "easeInOut", delay: 3 }}
-        >
-          <svg viewBox="0 0 800 800" className="w-full h-full" preserveAspectRatio="none">
-            <motion.path
-              fill="oklch(0.20 0.07 245 / 0.6)"
-              animate={{
-                d: [
-                  "M 400 150 C 550 130, 680 250, 660 400 C 640 550, 530 680, 380 670 C 230 660, 130 540, 150 400 C 170 260, 250 170, 400 150 Z",
-                  "M 380 140 C 540 160, 690 270, 670 420 C 650 570, 520 690, 370 680 C 220 670, 120 530, 140 380 C 160 230, 220 120, 380 140 Z",
-                  "M 400 150 C 550 130, 680 250, 660 400 C 640 550, 530 680, 380 670 C 230 660, 130 540, 150 400 C 170 260, 250 170, 400 150 Z",
-                ],
-              }}
-              transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            />
-          </svg>
-        </motion.div>
-
-        <svg className="absolute inset-0 w-full h-full opacity-[0.025]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="hero-weave" width="4" height="4" patternUnits="userSpaceOnUse">
-              <path d="M0 0L4 4M4 0L0 4" stroke="oklch(0.65 0.10 240)" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#hero-weave)" />
-        </svg>
-      </div>
+      {/* ── Background — lightweight CSS gradient, no SVG morphing ── */}
+      <div className="absolute inset-0 hero-bg" />
 
       {/* ── Main content ── */}
-      <motion.div
-        className="relative z-10 w-full"
-        style={{ scale: heroScale, opacity: heroOpacity }}
-      >
+      <div className="relative z-10 w-full">
         {isMobile ? (
           /* ── MOBILE LAYOUT ──
              During explode/collapse: centered explosion animation
@@ -600,7 +526,7 @@ export default function Hero() {
             </div>
           </div>
         )}
-      </motion.div>
+      </div>
 
       {/* Scroll indicator */}
       <motion.div

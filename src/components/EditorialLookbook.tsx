@@ -1,278 +1,457 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState, useEffect } from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
-const looks = [
+const models = [
+  { src: "/model-1.png", alt: "Model in denim — look 1" },
+  { src: "/model-2.png", alt: "Model in denim — look 2" },
+  { src: "/model-3.png", alt: "Model in denim — look 3" },
+];
+
+const featuredProducts = [
   {
-    id: 1,
-    title: "The Commuter",
-    subtitle: "City to rooftop, no costume change.",
-    image:
-      "https://images.pexels.com/photos/1040945/pexels-photo-1040945.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    details: ["Slim Fit Pro — Midnight", "Organic stretch denim", "32\" inseam"],
+    name: "Slim Fit Pro",
+    price: "$89",
+    desc: "Our most versatile slim fit. Crafted from premium organic stretch denim with a modern tapered leg.",
+    image: "https://images.pexels.com/photos/17745134/pexels-photo-17745134.jpeg?auto=compress&cs=tinysrgb&w=800",
+    pairWith: [
+      { name: "Denim Jacket", image: "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=200" },
+      { name: "Canvas Belt", image: "https://images.pexels.com/photos/6786614/pexels-photo-6786614.jpeg?auto=compress&cs=tinysrgb&w=200" },
+    ],
   },
   {
-    id: 2,
-    title: "After Hours",
-    subtitle: "When the office lights go off and the city turns on.",
-    image:
-      "https://images.pexels.com/photos/1183266/pexels-photo-1183266.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    details: ["High Rise Sculpt — Onyx", "Sculpted silhouette", "Tapered ankle"],
+    name: "High Rise Sculpt",
+    price: "$95",
+    desc: "Sculpted silhouette with a high-rise waist that flatters every body type. Tapered ankle with raw hem.",
+    image: "https://images.pexels.com/photos/4210866/pexels-photo-4210866.jpeg?auto=compress&cs=tinysrgb&w=800",
+    pairWith: [
+      { name: "Cropped Tee", image: "https://images.pexels.com/photos/17630811/pexels-photo-17630811.jpeg?auto=compress&cs=tinysrgb&w=200" },
+      { name: "Sneakers", image: "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=200" },
+    ],
   },
   {
-    id: 3,
-    title: "Weekend Raw",
-    subtitle: "Unstructured days deserve unstructured denim.",
-    image:
-      "https://images.pexels.com/photos/1043474/pexels-photo-1043474.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    details: ["Relaxed Taper — Stone", "Washed organic cotton", "Relaxed through hip"],
-  },
-  {
-    id: 4,
-    title: "Studio Session",
-    subtitle: "For the ones who make things happen.",
-    image:
-      "https://images.pexels.com/photos/2887766/pexels-photo-2887766.jpeg?auto=compress&cs=tinysrgb&w=1200",
-    details: ["Classic Straight — Indigo", "Raw selvedge denim", "Straight leg"],
+    name: "Classic Straight",
+    price: "$79",
+    desc: "The timeless straight leg. Relaxed through the hip with a clean straight cut. Our bestseller.",
+    image: "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=800",
+    pairWith: [
+      { name: "Henley Shirt", image: "https://images.pexels.com/photos/6786614/pexels-photo-6786614.jpeg?auto=compress&cs=tinysrgb&w=200" },
+      { name: "Boots", image: "https://images.pexels.com/photos/17745134/pexels-photo-17745134.jpeg?auto=compress&cs=tinysrgb&w=200" },
+    ],
   },
 ];
 
-function LookCard({
-  look,
-  index,
-}: {
-  look: (typeof looks)[0];
-  index: number;
+// ─── 3D Tilt Product Card (matches main ProductCards style) ──────────
+function TiltProductCard({ product, index, onSelect }: {
+  product: typeof featuredProducts[0]; index: number; onSelect: () => void;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
-  const inView = useInView(cardRef, { once: true, margin: "-15%" });
 
-  // Alternate layout: odd cards push right, even push left
-  const isOdd = index % 2 !== 0;
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePos({
+      x: (e.clientX - rect.left) / rect.width - 0.5,
+      y: (e.clientY - rect.top) / rect.height - 0.5,
+    });
+  };
 
   return (
     <motion.div
       ref={cardRef}
-      className={`grid grid-cols-12 gap-4 md:gap-0 items-center ${
-        isOdd ? "md:direction-rtl" : ""
-      }`}
-      initial={{ opacity: 0 }}
-      animate={inView ? { opacity: 1 } : {}}
-      transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
+      className="perspective-1000"
+      initial={{ opacity: 0, y: 60, filter: "blur(8px)" }}
+      whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+      viewport={{ once: true, margin: "-50px" }}
+      transition={{ delay: index * 0.15, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => { setIsHovered(false); setMousePos({ x: 0, y: 0 }); }}
+      onMouseMove={handleMouseMove}
+      onClick={onSelect}
     >
-      {/* Image side — spans 7 cols */}
       <motion.div
-        className={`col-span-12 md:col-span-7 relative ${
-          isOdd ? "md:col-start-6" : "md:col-start-1"
-        }`}
-        style={{ direction: "ltr" }}
-        initial={{ opacity: 0, x: isOdd ? 120 : -120 }}
-        animate={inView ? { opacity: 1, x: 0 } : {}}
-        transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1], delay: 0.1 }}
+        className="preserve-3d relative rounded-2xl overflow-hidden bg-white cursor-pointer"
+        animate={{ rotateY: mousePos.x * 8, rotateX: -mousePos.y * 8 }}
+        transition={{ type: "spring", stiffness: 200, damping: 20 }}
       >
-        <div className="relative overflow-hidden rounded-sm group" data-cursor-hover>
-          {/* Editorial crop — cinematic ratio */}
-          <div className="aspect-[16/10] relative overflow-hidden">
-            <Image
-              src={look.image}
-              alt={look.title}
-              fill
-              sizes="(max-width: 768px) 100vw, 58vw"
-              className="object-cover transition-transform duration-[1.2s] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
-            />
-            {/* Film grain overlay */}
-            <div
-              className="absolute inset-0 mix-blend-overlay opacity-[0.06] pointer-events-none"
-              style={{
-                backgroundImage:
-                  "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-              }}
-            />
-          </div>
-
-          {/* Issue number — editorial marker */}
-          <div className="absolute top-5 left-6 z-10">
-            <span className="font-[var(--font-display)] text-[11px] tracking-[0.35em] text-white/50 font-medium">
-              LOOK {String(index + 1).padStart(2, "0")}
-            </span>
-          </div>
-
-          {/* Bottom gradient for text legibility */}
-          <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-black/50 to-transparent pointer-events-none" />
-
-          {/* Outfit details — appear on hover */}
+        {/* Image — shifts up on hover */}
+        <div className="relative aspect-[3/4] overflow-hidden bg-[oklch(0.96_0.005_240)]">
           <motion.div
-            className="absolute bottom-6 left-6 right-6 z-10"
-            initial={false}
+            className="absolute inset-0"
+            animate={{ y: isHovered ? -30 : 0, scale: isHovered ? 1.04 : 1 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="flex flex-wrap gap-2">
-              {look.details.map((detail, di) => (
-                <motion.span
-                  key={di}
-                  className="px-3 py-1.5 text-[10px] tracking-[0.2em] text-white/80 font-[var(--font-display)] border border-white/15 backdrop-blur-md bg-white/5 rounded-sm"
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.6 + di * 0.08 }}
-                >
-                  {detail}
-                </motion.span>
-              ))}
-            </div>
+            <Image
+              src={product.image}
+              alt={product.name}
+              fill
+              sizes="(max-width: 640px) 100vw, 300px"
+              className="object-cover"
+            />
           </motion.div>
+
+          {/* Shine sweep */}
+          <motion.div
+            className="absolute inset-0 pointer-events-none z-10"
+            style={{ background: "linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.1) 50%, transparent 60%)" }}
+            animate={{ x: isHovered ? "100%" : "-100%" }}
+            transition={{ duration: 0.7, ease: "easeInOut" }}
+          />
         </div>
-      </motion.div>
 
-      {/* Text side — spans 5 cols, offset inward */}
-      <motion.div
-        className={`col-span-12 md:col-span-5 ${
-          isOdd
-            ? "md:col-start-1 md:row-start-1 md:pr-16 md:text-right"
-            : "md:col-start-8 md:pl-16"
-        }`}
-        style={{ direction: "ltr" }}
-        initial={{ opacity: 0, y: 40 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1], delay: 0.35 }}
-      >
-        {/* Oversized index */}
-        <span
-          className={`font-[var(--font-display)] text-[clamp(6rem,12vw,10rem)] font-black leading-none text-nino-950/[0.04] block ${
-            isOdd ? "md:text-right" : ""
-          }`}
-        >
-          {String(index + 1).padStart(2, "0")}
-        </span>
+        {/* Info */}
+        <div className="px-5 pt-4">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-[11px] text-nino-800/25 tracking-[0.15em] font-[var(--font-display)] mb-1">
+                {product.name === "Slim Fit Pro" ? "MEN'S DENIM" : product.name === "High Rise Sculpt" ? "WOMEN'S DENIM" : "UNISEX DENIM"}
+              </p>
+              <h4 className="font-[var(--font-display)] text-base font-semibold text-nino-950">
+                {product.name}
+              </h4>
+            </div>
+            <div className="text-right">
+              <div className="font-[var(--font-display)] text-lg font-bold text-nino-600">{product.price}</div>
+            </div>
+          </div>
 
-        <div className="-mt-12 md:-mt-16 relative z-10">
-          <h3 className="font-[var(--font-display)] text-[clamp(1.8rem,4vw,3rem)] font-bold text-nino-950 leading-[1.1] mb-3">
-            {look.title}
-          </h3>
-          <p className="text-nino-800/35 text-base leading-relaxed max-w-sm">
-            {look.subtitle}
-          </p>
-
-          <motion.a
-            href="/products"
-            data-cursor-hover
-            className={`inline-flex items-center gap-3 mt-6 text-[12px] tracking-[0.25em] font-[var(--font-display)] font-semibold text-nino-600 hover:text-nino-800 transition-colors group/link ${
-              isOdd ? "md:flex-row-reverse" : ""
-            }`}
-            whileHover={{ x: isOdd ? -4 : 4 }}
+          {/* Expandable details */}
+          <div
+            className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ gridTemplateRows: isHovered ? "1fr" : "0fr" }}
           >
-            SHOP THIS LOOK
-            <span className="w-8 h-[1px] bg-nino-500/40 group-hover/link:w-12 transition-all duration-500" />
-          </motion.a>
+            <div className="overflow-hidden">
+              <div className="pt-4 pb-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">COLOR</span>
+                  <div className="flex gap-2">
+                    {["#2563eb", "#1e293b", "#78716c"].map((c, ci) => (
+                      <div key={ci} className={`w-5 h-5 rounded-full border-2 cursor-pointer ${ci === 0 ? "border-nino-500/50" : "border-nino-200/60"}`} style={{ backgroundColor: c }} />
+                    ))}
+                  </div>
+                </div>
+                <button className="w-full py-3 rounded-xl font-[var(--font-display)] text-xs font-semibold tracking-[0.12em] text-white bg-nino-950 hover:bg-nino-800 active:scale-[0.98] transition-all duration-200">
+                  VIEW DETAILS
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Default bottom */}
+          <div
+            className="grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]"
+            style={{ gridTemplateRows: isHovered ? "0fr" : "1fr" }}
+          >
+            <div className="overflow-hidden">
+              <div className="flex gap-2 pb-5">
+                {["#2563eb", "#1e293b", "#78716c"].map((c, ci) => (
+                  <div key={ci} className="w-4 h-4 rounded-full border" style={{ backgroundColor: c, borderColor: ci === 0 ? "oklch(0.58 0.20 240 / 0.5)" : "oklch(0.88 0.02 240)" }} />
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       </motion.div>
     </motion.div>
   );
 }
 
-export default function EditorialLookbook() {
-  const sectionRef = useRef<HTMLDivElement>(null);
-  const headerInView = useInView(sectionRef, { once: true, margin: "-80px" });
+// ─── Section 1: Hero — model walks through/behind the heading text ──
+function HeroSection() {
+  const [current, setCurrent] = useState(0);
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  const bgTextX = useTransform(scrollYProgress, [0, 1], [100, -200]);
+  useEffect(() => {
+    const interval = setInterval(() => setCurrent((p) => (p + 1) % models.length), 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
-    <section
-      ref={sectionRef}
-      className="relative py-32 md:py-44 overflow-hidden bg-warm-white"
-    >
-      {/* Sliding background text */}
-      <motion.div
-        className="absolute top-[15%] whitespace-nowrap pointer-events-none select-none"
-        style={{ x: bgTextX }}
-      >
-        <span className="text-[clamp(8rem,20vw,16rem)] font-[var(--font-display)] font-black text-nino-950/[0.015] tracking-tighter leading-none">
-          LOOKBOOK &mdash; SS26 &mdash; LOOKBOOK &mdash; SS26
-        </span>
-      </motion.div>
+    <section className="relative min-h-screen overflow-hidden" style={{ background: "oklch(0.965 0.008 240)" }}>
+      <div className="relative max-w-[1400px] mx-auto px-6 min-h-screen flex items-center">
 
-      {/* Section header — editorial magazine style */}
-      <div className="max-w-[1400px] mx-auto px-6 mb-24 md:mb-32">
-        <div className="grid grid-cols-12">
-          <div className="col-span-12 md:col-span-8">
-            {/* Kicker */}
-            <motion.div
-              className="flex items-center gap-4 mb-6"
-              initial={{ opacity: 0 }}
-              animate={headerInView ? { opacity: 1 } : {}}
-              transition={{ duration: 0.8 }}
-            >
-              <motion.div
-                className="h-[1px] bg-nino-500/25"
-                initial={{ width: 0 }}
-                animate={headerInView ? { width: 60 } : {}}
-                transition={{ duration: 1 }}
-              />
-              <span className="text-nino-700/35 text-[11px] tracking-[0.5em] font-[var(--font-display)] font-medium">
-                THE LOOKBOOK
-              </span>
-            </motion.div>
-
-            {/* Title — stacked lines with different weights */}
-            <div className="overflow-hidden">
-              <motion.div
-                initial={{ y: 100 }}
-                animate={headerInView ? { y: 0 } : {}}
-                transition={{
-                  duration: 1,
-                  ease: [0.16, 1, 0.3, 1],
-                }}
-              >
-                <h2 className="font-[var(--font-display)] text-[clamp(3rem,8vw,6rem)] font-bold text-nino-950 leading-[0.92]">
-                  Styled for
-                </h2>
-              </motion.div>
-            </div>
-            <div className="overflow-hidden">
-              <motion.div
-                initial={{ y: 100 }}
-                animate={headerInView ? { y: 0 } : {}}
-                transition={{
-                  duration: 1,
-                  ease: [0.16, 1, 0.3, 1],
-                  delay: 0.08,
-                }}
-              >
-                <h2 className="font-[var(--font-display)] text-[clamp(3rem,8vw,6rem)] font-light text-nino-950/60 leading-[0.92] italic">
-                  real life.
-                </h2>
-              </motion.div>
-            </div>
-          </div>
-
-          {/* Right — editorial blurb */}
-          <motion.div
-            className="col-span-12 md:col-span-4 md:self-end md:pb-2"
-            initial={{ opacity: 0, y: 30 }}
-            animate={headerInView ? { opacity: 1, y: 0 } : {}}
-            transition={{ delay: 0.5, duration: 0.8 }}
+        {/* ── LAYER 1 (back): Heading text ── */}
+        <div className="relative z-10 w-full">
+          <motion.p
+            className="text-[10px] tracking-[0.5em] text-nino-600/40 font-[var(--font-display)] font-medium mb-4"
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            <p className="text-nino-800/30 text-sm leading-relaxed max-w-xs md:ml-auto">
-              Four looks. Four moments in a day that matters. Each styled around
-              a single pair of Nino Jeans — because the right denim carries you
-              from morning meeting to midnight.
-            </p>
+            SPRING / SUMMER 2026
+          </motion.p>
+
+          <motion.h2
+            className="font-[var(--font-display)] text-[clamp(3.5rem,10vw,8rem)] font-bold text-nino-950 leading-[0.88] mb-6"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+          >
+            Premium
+            <br />
+            <span className="text-nino-950/30 font-light">Denim</span>
+            <br />
+            Collection
+          </motion.h2>
+
+          <motion.p
+            className="text-nino-800/30 text-sm leading-relaxed max-w-xs mb-8"
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.3 }}
+          >
+            Crafted for the modern generation. Every pair tells a story of dedication, comfort, and style.
+          </motion.p>
+
+          <motion.div
+            className="flex items-center gap-6"
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.5 }}
+          >
+            <a
+              href="/products"
+              className="inline-block px-8 py-3.5 rounded-full font-[var(--font-display)] text-sm font-semibold tracking-[0.15em] text-white"
+              style={{ background: "oklch(0.48 0.16 240)" }}
+            >
+              EXPLORE
+            </a>
+
+            {/* Dots inline */}
+            <div className="flex gap-2">
+              {models.map((_, i) => (
+                <button key={i} onClick={() => setCurrent(i)} aria-label={`Model ${i + 1}`} className="p-0.5">
+                  <div className="rounded-full transition-all duration-300" style={{
+                    width: i === current ? 22 : 7, height: 7,
+                    backgroundColor: i === current ? "oklch(0.48 0.16 240)" : "oklch(0.48 0.16 240 / 0.2)",
+                  }} />
+                </button>
+              ))}
+            </div>
           </motion.div>
         </div>
-      </div>
 
-      {/* Look cards — alternating asymmetric layout */}
-      <div className="max-w-[1400px] mx-auto px-6 flex flex-col gap-24 md:gap-36">
-        {looks.map((look, i) => (
-          <LookCard key={look.id} look={look} index={i} />
-        ))}
+        {/* ── LAYER 2 (front): Model — 3D walk-through animation ── */}
+        <div
+          className="absolute inset-0 z-20 pointer-events-none overflow-hidden"
+          style={{ perspective: "1200px" }}
+        >
+          <AnimatePresence mode="popLayout">
+            <motion.div
+              key={current}
+              className="absolute bottom-0 right-[10%] lg:right-[15%] h-[88vh] w-[50vw] max-w-[550px]"
+              // Enters from the right, small & rotated (far away) → walks toward camera → settles center
+              initial={{
+                x: "60%",
+                scale: 0.7,
+                rotateY: -25,
+                opacity: 0,
+              }}
+              animate={{
+                x: "0%",
+                scale: 1,
+                rotateY: 0,
+                opacity: 1,
+              }}
+              // Exits walking past to the left, growing slightly (passing camera)
+              exit={{
+                x: "-80%",
+                scale: 1.1,
+                rotateY: 15,
+                opacity: 0,
+              }}
+              transition={{
+                duration: 1.4,
+                ease: [0.25, 1, 0.5, 1],
+              }}
+              style={{ transformStyle: "preserve-3d" }}
+            >
+              <Image
+                src={models[current].src}
+                alt={models[current].alt}
+                fill
+                sizes="(max-width: 1024px) 70vw, 50vw"
+                className="object-contain object-bottom drop-shadow-2xl"
+                priority
+                draggable={false}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        {/* ── Model name label ── */}
+        <div className="absolute bottom-8 right-8 z-30">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={current}
+              className="text-[10px] tracking-[0.3em] text-nino-800/20 font-[var(--font-display)] font-medium"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              transition={{ duration: 0.4 }}
+            >
+              LOOK {String(current + 1).padStart(2, "0")} / {String(models.length).padStart(2, "0")}
+            </motion.span>
+          </AnimatePresence>
+        </div>
       </div>
     </section>
+  );
+}
+
+// ─── Section 2: Product cards ───────────────────────────────────────
+function ProductCardsSection({ onSelect }: { onSelect: (i: number) => void }) {
+  return (
+    <section className="py-28 px-6" style={{ background: "oklch(0.965 0.008 240)" }}>
+      <div className="max-w-[1000px] mx-auto">
+        <motion.div
+          className="text-center mb-14"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <p className="text-[10px] tracking-[0.5em] text-nino-600/40 font-[var(--font-display)] font-medium mb-3">
+            CURATED FOR YOU
+          </p>
+          <h3 className="font-[var(--font-display)] text-[clamp(2rem,5vw,3.5rem)] font-bold text-nino-950 leading-[1.1]">
+            Hottest Picks Of
+            <br />
+            The Season
+          </h3>
+        </motion.div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+          {featuredProducts.map((product, i) => (
+            <TiltProductCard key={product.name} product={product} index={i} onSelect={() => onSelect(i)} />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Section 3: Product detail ──────────────────────────────────────
+function ProductDetailSection({ activeProduct, onSelect }: { activeProduct: number; onSelect: (i: number) => void }) {
+  const product = featuredProducts[activeProduct];
+
+  return (
+    <section className="py-28 px-6" style={{ background: "oklch(0.965 0.008 240)" }}>
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        {/* Left: Info */}
+        <motion.div
+          initial={{ opacity: 0, x: -30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeProduct}
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.35 }}
+            >
+              <h3 className="font-[var(--font-display)] text-[clamp(2rem,5vw,3.5rem)] font-bold text-nino-950 leading-[1.05] mb-4">
+                {product.name}
+              </h3>
+              <p className="text-nino-800/35 text-sm leading-relaxed max-w-md mb-6">
+                {product.desc}
+              </p>
+
+              <div className="flex items-center gap-6 mb-8">
+                <span className="font-[var(--font-display)] text-3xl font-black text-nino-950">
+                  {product.price}
+                </span>
+                <a
+                  href="/products"
+                  className="px-7 py-3 rounded-full font-[var(--font-display)] text-xs font-semibold tracking-[0.15em] text-white"
+                  style={{ background: "oklch(0.48 0.16 240)" }}
+                >
+                  ADD TO BAG
+                </a>
+              </div>
+
+              {/* Pair with */}
+              <p className="text-[10px] tracking-[0.3em] text-nino-800/25 font-[var(--font-display)] font-medium mb-3">
+                PAIR IT WITH
+              </p>
+              <div className="flex gap-3">
+                {product.pairWith.map((item) => (
+                  <div key={item.name}>
+                    <div className="w-16 h-16 rounded-xl overflow-hidden bg-nino-100/40 relative">
+                      <Image src={item.image} alt={item.name} fill sizes="64px" className="object-cover" />
+                    </div>
+                    <p className="text-[9px] text-nino-800/25 font-[var(--font-display)] mt-1.5 text-center">
+                      {item.name}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Product selector */}
+          <div className="flex gap-2 mt-8">
+            {featuredProducts.map((p, i) => (
+              <button key={i} onClick={() => onSelect(i)} aria-label={p.name} className="p-0.5">
+                <div className="rounded-full transition-all duration-300" style={{
+                  width: i === activeProduct ? 22 : 7, height: 7,
+                  backgroundColor: i === activeProduct ? "oklch(0.48 0.16 240)" : "oklch(0.78 0.06 240)",
+                }} />
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Right: Large image */}
+        <motion.div
+          initial={{ opacity: 0, x: 30 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        >
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeProduct}
+              className="relative aspect-[3/4] max-h-[75vh] rounded-3xl overflow-hidden bg-nino-100/30"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.4 }}
+            >
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover"
+              />
+            </motion.div>
+          </AnimatePresence>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
+
+// ─── Main: 3 simple stacked sections ────────────────────────────────
+export default function EditorialLookbook() {
+  const [activeProduct, setActiveProduct] = useState(0);
+
+  return (
+    <>
+      <HeroSection />
+      <ProductCardsSection onSelect={setActiveProduct} />
+      <ProductDetailSection activeProduct={activeProduct} onSelect={setActiveProduct} />
+    </>
   );
 }

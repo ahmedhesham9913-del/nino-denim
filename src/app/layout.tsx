@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Outfit, DM_Sans } from "next/font/google";
 import "./globals.css";
-import CustomCursor from "@/components/CustomCursor";
 import Navbar from "@/components/Navbar";
 
 const outfit = Outfit({
@@ -29,8 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${outfit.variable} ${dmSans.variable} antialiased`}>
-      <body className="min-h-screen grain">
-        <CustomCursor />
+      <body className="min-h-screen">
         <Navbar />
         {children}
       </body>

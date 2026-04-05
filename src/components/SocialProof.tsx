@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { motion, useInView, useScroll, useTransform } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 
 const testimonials = [
   {
@@ -98,12 +98,6 @@ export default function SocialProof() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const headerInView = useInView(sectionRef, { once: true, margin: "-80px" });
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  const ugcY = useTransform(scrollYProgress, [0.5, 1], [0, -40]);
 
   const featured = testimonials.find((t) => t.featured)!;
   const others = testimonials.filter((t) => !t.featured);
@@ -285,7 +279,7 @@ export default function SocialProof() {
       </div>
 
       {/* Instagram-style UGC gallery */}
-      <motion.div style={{ y: ugcY }}>
+      <div>
         <div className="max-w-[1400px] mx-auto px-6 mb-8">
           <motion.div
             className="flex items-center gap-4"
@@ -335,7 +329,7 @@ export default function SocialProof() {
             </motion.div>
           ))}
         </div>
-      </motion.div>
+      </div>
     </section>
   );
 }

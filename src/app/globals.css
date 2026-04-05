@@ -39,12 +39,10 @@ body {
   color: oklch(0.25 0.03 260);
   font-family: var(--font-body);
   overflow-x: hidden;
+  cursor: auto;
 }
 
-/* Custom cursor only on non-touch, motion-OK devices */
-@media (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  body { cursor: none; }
-}
+/* Default cursor */
 
 /* Reduced motion: disable all custom animations */
 @media (prefers-reduced-motion: reduce) {
@@ -85,32 +83,25 @@ body {
   66% { transform: translateY(-6px) rotate(-1deg); }
 }
 
-/* Grain overlay — subtle on light bg */
-@keyframes grain {
-  0%, 100% { transform: translate(0, 0); }
-  10% { transform: translate(-5%, -10%); }
-  20% { transform: translate(-15%, 5%); }
-  30% { transform: translate(7%, -25%); }
-  40% { transform: translate(-5%, 25%); }
-  50% { transform: translate(-15%, 10%); }
-  60% { transform: translate(15%, 0%); }
-  70% { transform: translate(0%, 15%); }
-  80% { transform: translate(3%, 35%); }
-  90% { transform: translate(-10%, 10%); }
+/* Hero background — CSS-only, GPU-composited */
+@keyframes hero-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
-.grain::after {
-  content: "";
-  position: fixed;
-  inset: -200%;
-  width: 400%;
-  height: 400%;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-  animation: grain 8s steps(10) infinite;
-  pointer-events: none;
-  z-index: 9998;
-  opacity: 0.35;
+.hero-bg {
+  background: radial-gradient(ellipse 80% 60% at 55% 45%, oklch(0.19 0.07 248) 0%, oklch(0.13 0.03 250) 70%);
+  background-size: 200% 200%;
+  animation: hero-shift 20s ease-in-out infinite;
 }
+
+/* Lookbook background — CSS-only */
+@keyframes lookbook-shift {
+  0%, 100% { background-position: 20% 60%; }
+  50% { background-position: 80% 40%; }
+}
+
+/* (cleaned up — unused lookbook CSS removed) */
 
 /* Marquee */
 @keyframes marquee {

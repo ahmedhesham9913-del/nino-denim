@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import Image from "next/image";
-import { motion, useScroll, useTransform, useInView } from "framer-motion";
+import { motion, useInView } from "framer-motion";
 
 const stats = [
   { value: "50K+", label: "Customers Worldwide" },
@@ -15,13 +15,6 @@ export default function BrandStory() {
   const sectionRef = useRef<HTMLDivElement>(null);
   const titleInView = useInView(sectionRef, { once: true, margin: "-100px" });
 
-  const { scrollYProgress } = useScroll({
-    target: sectionRef,
-    offset: ["start end", "end start"],
-  });
-
-  const parallaxY = useTransform(scrollYProgress, [0, 1], [80, -80]);
-  const imageScale = useTransform(scrollYProgress, [0, 0.5], [0.9, 1]);
 
   return (
     <section
@@ -44,9 +37,8 @@ export default function BrandStory() {
       <div className="max-w-[1400px] mx-auto relative">
         <div className="grid lg:grid-cols-12 gap-10 items-center">
           {/* Left: Image — spans 7 cols, breaks upward */}
-          <motion.div
+          <div
             className="lg:col-span-7 relative"
-            style={{ y: parallaxY, scale: imageScale }}
           >
             <div className="relative aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl shadow-nino-900/10 lg:-mt-16">
               <Image
@@ -84,13 +76,9 @@ export default function BrandStory() {
               transition={{ delay: 0.8, type: "spring" }}
             />
 
-            {/* Floating stitch */}
-            <motion.div
-              className="absolute top-8 right-8 w-20 h-20 rounded-full border-2 border-dashed border-nino-300/20"
-              animate={{ rotate: 360 }}
-              transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-            />
-          </motion.div>
+            {/* Stitch accent */}
+            <div className="absolute top-8 right-8 w-20 h-20 rounded-full border-2 border-dashed border-nino-300/20" />
+          </div>
 
           {/* Right: Content — spans 5 cols */}
           <div className="lg:col-span-5">
