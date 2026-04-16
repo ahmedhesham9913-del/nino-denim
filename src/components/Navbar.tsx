@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useCartStore } from "@/store/cart";
+import CartDrawer from "@/components/CartDrawer";
 
 const navLinks = [
   { label: "HOME", href: "/" },
@@ -16,6 +18,14 @@ export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeLink, setActiveLink] = useState(0);
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const cartTotalItems = useCartStore((s) => s.totalItems);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 60);
@@ -126,8 +136,9 @@ export default function Navbar() {
             </motion.button>
 
             <motion.button
-              aria-label="Shopping bag, 3 items"
+              aria-label={`Shopping bag${mounted ? `, ${cartTotalItems()} items` : ""}`}
               data-cursor-hover
+              onClick={() => setDrawerOpen(true)}
               className={`relative p-2 rounded-full transition-colors ${scrolled ? "hover:bg-nino-100/50" : "hover:bg-white/10"}`}
               initial={{ opacity: 0, scale: 0 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -140,9 +151,11 @@ export default function Navbar() {
                 <line x1="3" y1="6" x2="21" y2="6" />
                 <path d="M16 10a4 4 0 01-8 0" />
               </svg>
-              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-nino-500 rounded-full text-[9px] font-bold flex items-center justify-center text-white">
-                3
-              </span>
+              {mounted && cartTotalItems() > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-nino-500 rounded-full text-[9px] font-bold flex items-center justify-center text-white">
+                  {cartTotalItems()}
+                </span>
+              )}
             </motion.button>
 
             {/* Mobile Menu */}
@@ -209,6 +222,8 @@ export default function Navbar() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <CartDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   );
 }

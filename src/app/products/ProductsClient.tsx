@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -8,17 +8,15 @@ import {
   AnimatePresence,
   LayoutGroup,
 } from "framer-motion";
-import {
-  products as allProducts,
-  allStyles,
-  allColors,
-  type Product,
-} from "@/lib/products";
+import type { Product, ProductCategory, ProductColor } from "@/lib/types";
+import type { SortOption } from "@/services/products";
+import { useProducts } from "@/hooks/useProducts";
+import { useAnalytics } from "@/hooks/useAnalytics";
+import SkeletonProductCard from "@/components/SkeletonProductCard";
 import Footer from "@/components/Footer";
 
 /* ───── Types ───── */
-type Category = "All" | Product["category"];
-type SortOption = "newest" | "price-asc" | "price-desc" | "popular";
+type Category = "All" | ProductCategory;
 type ViewMode = "grid-3" | "grid-4" | "grid-2";
 
 const categories: Category[] = ["All", "Men", "Women", "Kids", "Unisex"];
@@ -42,26 +40,70 @@ export default function ProductsClient() {
   const [mobileFilters, setMobileFilters] = useState(false);
   const gridRef = useRef<HTMLDivElement>(null);
 
-  /* ── Filter logic ── */
+  /* ── Firebase data ── */
+  const { products: firebaseProducts, loading, error, hasMore, loadMore } = useProducts({
+    category: category === "All" ? undefined : (category as ProductCategory),
+    sortBy: sort,
+  });
+
+  /* ── Analytics ── */
+  const { trackFilterApplied } = useAnalytics();
+
+  useEffect(() => {
+    trackFilterApplied({
+      category,
+      styles: selectedStyles,
+      colors: selectedColors,
+      sizes: selectedSizes,
+      priceMax,
+      sort,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category, selectedStyles, selectedColors, selectedSizes, priceMax, sort]);
+
+  /* ── Derive styles & colors from fetched products ── */
+  const allStyles = useMemo(
+    () => [...new Set(firebaseProducts.map((p) => p.style))].sort(),
+    [firebaseProducts]
+  );
+
+  const allColors = useMemo(() => {
+    const seen = new Map<string, ProductColor>();
+    firebaseProducts.forEach((p) => {
+      // New variant schema
+      if (p.variants && p.variants.length > 0) {
+        p.variants.forEach((v) => {
+          if (!seen.has(v.colorName)) seen.set(v.colorName, { name: v.colorName, hex: v.colorHex });
+        });
+      }
+    });
+    return [...seen.values()];
+  }, [firebaseProducts]);
+
+  /* ── Client-side filter logic ── */
   const filtered = useMemo(() => {
-    let result = allProducts;
-    if (category !== "All") result = result.filter((p) => p.category === category);
-    if (selectedStyles.length) result = result.filter((p) => selectedStyles.includes(p.style));
-    if (selectedColors.length) result = result.filter((p) => p.colors.some((c) => selectedColors.includes(c.name)));
-    if (selectedSizes.length) result = result.filter((p) => p.sizes.some((s) => selectedSizes.includes(s)));
+    let result = firebaseProducts;
+    if (selectedStyles.length)
+      result = result.filter((p) => selectedStyles.includes(p.style));
+    if (selectedColors.length)
+      result = result.filter((p) => {
+        if (p.variants && p.variants.length > 0) {
+          return p.variants.some((v) => selectedColors.includes(v.colorName));
+        }
+        return false;
+      });
+    if (selectedSizes.length)
+      result = result.filter((p) => {
+        if (p.variants && p.variants.length > 0) {
+          return p.variants.some((v) =>
+            v.sizes.some((s) => selectedSizes.includes(s.value))
+          );
+        }
+        return false;
+      });
     result = result.filter((p) => p.price <= priceMax);
     return result;
-  }, [category, selectedStyles, selectedColors, selectedSizes, priceMax]);
-
-  const sorted = useMemo(() => {
-    const arr = [...filtered];
-    switch (sort) {
-      case "price-asc": return arr.sort((a, b) => a.price - b.price);
-      case "price-desc": return arr.sort((a, b) => b.price - a.price);
-      case "popular": return arr.sort((a, b) => b.reviews - a.reviews);
-      default: return arr;
-    }
-  }, [filtered, sort]);
+  }, [firebaseProducts, selectedStyles, selectedColors, selectedSizes, priceMax]);
 
   const activeFilterCount =
     (category !== "All" ? 1 : 0) +
@@ -83,14 +125,20 @@ export default function ProductsClient() {
   };
 
   const availableSizes = useMemo(() => {
-    const pool = category === "All" ? allProducts : allProducts.filter((p) => p.category === category);
-    return [...new Set(pool.flatMap((p) => p.sizes))].sort((a, b) => {
+    const pool = firebaseProducts;
+    const allSizes = pool.flatMap((p) => {
+      if (p.variants && p.variants.length > 0) {
+        return p.variants.flatMap((v) => v.sizes.map((s) => s.value));
+      }
+      return [];
+    });
+    return [...new Set(allSizes)].sort((a, b) => {
       const numA = parseInt(a), numB = parseInt(b);
       if (!isNaN(numA) && !isNaN(numB)) return numA - numB;
       const order = ["XS", "S", "M", "L", "XL", "XXL"];
       return order.indexOf(a) - order.indexOf(b);
     });
-  }, [category]);
+  }, [firebaseProducts]);
 
   const gridCols = {
     "grid-2": "grid-cols-1 sm:grid-cols-2",
@@ -236,7 +284,7 @@ export default function ProductsClient() {
                   Shop <span className="text-gradient">All</span>
                 </h1>
                 <p className="text-nino-800/25 text-sm mt-2 font-[var(--font-display)]">
-                  {sorted.length} product{sorted.length !== 1 ? "s" : ""}
+                  {filtered.length} product{filtered.length !== 1 ? "s" : ""}
                 </p>
               </motion.div>
 
@@ -374,35 +422,87 @@ export default function ProductsClient() {
 
             {/* Product Grid */}
             <div className="flex-1 min-w-0" ref={gridRef}>
-              <LayoutGroup>
-                <motion.div className={`grid gap-5 ${gridCols[viewMode]}`} layout>
-                  <AnimatePresence mode="popLayout">
-                    {sorted.map((product, i) => (
-                      <ProductCard key={product.id} product={product} index={i} viewMode={viewMode} />
-                    ))}
-                  </AnimatePresence>
-                </motion.div>
-              </LayoutGroup>
-
-              {sorted.length === 0 && (
+              {/* Error state */}
+              {error && (
                 <motion.div
                   className="flex flex-col items-center justify-center py-32 text-center"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-                  <div className="w-20 h-20 rounded-2xl bg-nino-100/40 flex items-center justify-center mb-6">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-nino-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                  <div className="w-20 h-20 rounded-2xl bg-red-50 flex items-center justify-center mb-6">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-red-400"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
                   </div>
-                  <h3 className="font-[var(--font-display)] text-xl font-semibold text-nino-950 mb-2">No matches found</h3>
-                  <p className="text-sm text-nino-800/25 mb-6 max-w-xs">Try adjusting your filters to see more results.</p>
+                  <h3 className="font-[var(--font-display)] text-xl font-semibold text-nino-950 mb-2">Something went wrong</h3>
+                  <p className="text-sm text-nino-800/25 mb-6 max-w-xs">{error}</p>
                   <button
-                    onClick={clearAll}
+                    onClick={() => window.location.reload()}
                     className="px-6 py-2.5 rounded-full bg-nino-950 text-white text-sm font-[var(--font-display)] font-medium tracking-wider"
                     data-cursor-hover
                   >
-                    CLEAR FILTERS
+                    TRY AGAIN
                   </button>
                 </motion.div>
+              )}
+
+              {/* Loading state */}
+              {loading && !error && (
+                <div className={`grid gap-5 ${gridCols[viewMode]}`}>
+                  {Array.from({ length: 12 }).map((_, i) => (
+                    <SkeletonProductCard key={i} />
+                  ))}
+                </div>
+              )}
+
+              {/* Products */}
+              {!loading && !error && (
+                <>
+                  <LayoutGroup>
+                    <motion.div className={`grid gap-5 ${gridCols[viewMode]}`} layout>
+                      <AnimatePresence mode="popLayout">
+                        {filtered.map((product, i) => (
+                          <Link key={product.id} href={`/product/${product.id}`}>
+                            <ProductCard product={product} index={i} viewMode={viewMode} />
+                          </Link>
+                        ))}
+                      </AnimatePresence>
+
+                      {/* Load More button */}
+                      {hasMore && !loading && (
+                        <div className="col-span-full flex justify-center mt-12">
+                          <motion.button
+                            onClick={loadMore}
+                            className="px-10 py-3.5 rounded-full font-[var(--font-display)] text-sm font-semibold tracking-[0.15em] text-nino-700/50 border border-nino-300/30 hover:border-nino-400/50 hover:text-nino-800 transition-all duration-300"
+                            whileHover={{ scale: 1.03 }}
+                            whileTap={{ scale: 0.97 }}
+                          >
+                            LOAD MORE
+                          </motion.button>
+                        </div>
+                      )}
+                    </motion.div>
+                  </LayoutGroup>
+
+                  {filtered.length === 0 && (
+                    <motion.div
+                      className="flex flex-col items-center justify-center py-32 text-center"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="w-20 h-20 rounded-2xl bg-nino-100/40 flex items-center justify-center mb-6">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-nino-400"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+                      </div>
+                      <h3 className="font-[var(--font-display)] text-xl font-semibold text-nino-950 mb-2">No matches found</h3>
+                      <p className="text-sm text-nino-800/25 mb-6 max-w-xs">Try adjusting your filters to see more results.</p>
+                      <button
+                        onClick={clearAll}
+                        className="px-6 py-2.5 rounded-full bg-nino-950 text-white text-sm font-[var(--font-display)] font-medium tracking-wider"
+                        data-cursor-hover
+                      >
+                        CLEAR FILTERS
+                      </button>
+                    </motion.div>
+                  )}
+                </>
               )}
             </div>
           </div>
@@ -452,7 +552,7 @@ export default function ProductsClient() {
                   className="flex-1 py-3 rounded-xl bg-nino-950 text-white text-sm font-[var(--font-display)] font-semibold tracking-wider"
                   data-cursor-hover
                 >
-                  SHOW {sorted.length} RESULTS
+                  SHOW {filtered.length} RESULTS
                 </button>
               </div>
             </motion.div>
@@ -525,9 +625,24 @@ function ProductCard({ product, index, viewMode }: { product: Product; index: nu
   const [isHovered, setIsHovered] = useState(false);
   const [selectedColor, setSelectedColor] = useState(0);
 
-  const discount = product.originalPrice > product.price
+  // Derive colors from variants
+  const colors = useMemo(() => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.map((v) => ({ name: v.colorName, hex: v.colorHex }));
+    }
+    return [];
+  }, [product.variants]);
+
+  // Conditional discount: only show when tag === "Sale"
+  const isSale = product.tag === "Sale";
+  const discount = isSale && product.originalPrice > product.price
     ? Math.round((1 - product.price / product.originalPrice) * 100)
     : 0;
+
+  // Use mainImage, fallback to first variant image
+  const productImage = product.mainImage
+    ?? product.variants?.[0]?.images?.[0]
+    ?? "";
 
   return (
     <motion.div
@@ -555,7 +670,7 @@ function ProductCard({ product, index, viewMode }: { product: Product; index: nu
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           >
             <Image
-              src={product.image}
+              src={productImage}
               alt={product.name}
               fill
               sizes={viewMode === "grid-4" ? "25vw" : viewMode === "grid-3" ? "33vw" : "50vw"}
@@ -644,11 +759,11 @@ function ProductCard({ product, index, viewMode }: { product: Product; index: nu
 
           {/* Color dots */}
           <div className="flex gap-1.5 mt-3">
-            {product.colors.map((color, ci) => (
+            {colors.map((color, ci) => (
               <button
                 key={ci}
                 aria-label={`Select ${color.name}`}
-                onClick={() => setSelectedColor(ci)}
+                onClick={(e) => { e.preventDefault(); setSelectedColor(ci); }}
                 className={`w-3.5 h-3.5 rounded-full transition-all duration-200 ${
                   selectedColor === ci ? "ring-2 ring-nino-500/25 ring-offset-1" : ""
                 }`}

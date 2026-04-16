@@ -1,36 +1,360 @@
-The "Editorial Scroll-Reveal" Prompt for Claude Code
-"I am building a high-end fashion hero section in Next.js 18 (App Router). I need to replicate a specific motion design where a moving model is the focal point, and products are revealed via scroll.
+# 🧠 PROJECT PLAN — JEANS ECOMMERCE PLATFORM
 
-1. The Layout Structure:
+## 🎯 Goal
 
-Pinned Hero Container: Create a 100vh section that is pinned using GSAP ScrollTrigger.
+Build a scalable, production-ready ecommerce platform for a jeans store with:
 
-Background (The Model): A full-screen video or next/image of a moving model. It should have a subtle parallax or scale-up effect as the user begins to scroll.
+* High performance
+* Clean backend architecture
+* Full dashboard control
+* Analytics & reporting
+* Ready for scaling
 
-The Product Overlay: A set of product cards (image, name, price) that are initially hidden or off-screen.
+---
 
-2. Scroll-Triggered Animation (The 'Classy' Reveal):
+# 🧱 CORE STACK
 
-Initial State: Only the model is moving. The heading ('The New Collection') is large and centered.
+## 1. Firebase (Primary Backend)
 
-Phase 1 (Scroll 0-30%): As the user scrolls, the main heading should shrink and move to the top-left corner.
+Purpose:
 
-Phase 2 (Scroll 30-80%): A grid of 3 product cards should 'float' into the hero area from the bottom.
+* Store products
+* Store orders
+* Store users
+* Handle real-time data
 
-Animation: Use a staggered entrance. Each card should have a y: 100 to y: 0 motion with a filter: blur(10px) to blur(0px) transition.
+Services Used:
 
-Interaction: The model in the background should slightly dim or blur as the products come into focus to maintain visual hierarchy.
+* Firestore (Database)
+* Firebase Auth (optional later)
 
-Phase 3 (Scroll 80-100%): A 'Shop All' button appears at the center-bottom with a 'glitch' or 'shimmer' reveal.
+---
 
-3. Technical Requirements:
+## 2. Cloudinary (Media Layer)
 
-Use GSAP with the @gsap/react hook. Ensure the timeline is linked to the scroll position (scrub: 1).
+Purpose:
 
-Use Tailwind CSS for the 'Editorial' look: Thin borders, Serif typography (Playfair Display), and generous letter spacing.
+* Store all product images
+* Optimize images (compression, resizing)
+* Deliver via CDN
 
-Leverage Next.js 18 Server Components to fetch product data, but pass it to a Client Component for the GSAP orchestration.
+Rules:
 
-Implement Next.js 18 View Transitions for the product cards so they can morph into a 'Product Detail' view if clicked.
+* NEVER store images in Firebase
+* Always store only image URLs in Firestore
 
-Please provide the HeroSection.tsx and ProductCard.tsx components with the GSAP timeline logic included."
+---
+
+## 3. Supabase (Analytics + SQL Layer)
+
+Purpose:
+
+* Store events (views, clicks, orders)
+* Generate reports
+* Dashboard analytics
+
+---
+
+# 🔐 ENV & CONFIG
+
+All credentials are stored in:
+.env.local
+
+Required keys:
+
+* Firebase config
+* Cloudinary API
+* Supabase URL + anon key
+
+---
+
+# 🧩 PROJECT STRUCTURE
+
+/app
+/components
+/pages
+/lib
+firebase.js
+cloudinary.js
+supabase.js
+/services
+/hooks
+
+---
+
+# 🚀 PHASE 1 — PROJECT SETUP
+
+Tasks:
+
+* Setup Next.js project
+* Install dependencies:
+
+  * firebase
+  * axios
+  * framer-motion
+* Setup Tailwind CSS
+* Setup folder structure
+
+Deliverables:
+
+* Running Next.js app
+* Clean architecture
+
+---
+
+# 🚀 PHASE 2 — FIREBASE INTEGRATION
+
+Tasks:
+
+* Initialize Firebase
+* Connect Firestore
+* Create collections:
+
+Collections:
+
+* products
+* orders
+* users
+
+Product Schema:
+{
+name: string,
+price: number,
+images: [string],
+sizes: [string],
+category: string,
+stock: number,
+created_at: timestamp
+}
+
+---
+
+# 🚀 PHASE 3 — CLOUDINARY SETUP
+
+Tasks:
+
+* Setup upload endpoint
+* Upload images from dashboard
+* Store returned URL in Firebase
+
+---
+
+# 🚀 PHASE 4 — LANDING PAGE (IMPLEMENT EXISTING DESIGN)
+
+Tasks:
+
+* Convert Figma design to components
+* Implement animations (Framer Motion)
+* Responsive layout
+
+Sections:
+
+* Hero
+* Featured products
+* CTA
+
+---
+
+# 🚀 PHASE 5 — SHOP PAGE
+
+Tasks:
+
+* Fetch products from Firebase
+* Implement:
+
+  * pagination
+  * filtering (size, category)
+  * sorting
+
+Important:
+
+* Use query + limit (NO full fetch)
+
+---
+
+# 🚀 PHASE 6 — PRODUCT PAGE
+
+Tasks:
+
+* Dynamic routing (/product/[id])
+* Show:
+
+  * images
+  * sizes
+  * stock
+  * description
+
+Features:
+
+* Add to cart
+* Select size
+
+---
+
+# 🚀 PHASE 7 — CART SYSTEM
+
+Tasks:
+
+* Local cart state (context or Zustand)
+* Store:
+
+  * product
+  * quantity
+  * size
+
+---
+
+# 🚀 PHASE 8 — CHECKOUT SYSTEM
+
+Tasks:
+
+* Customer form:
+
+  * name
+  * phone
+  * address
+  * location (map optional)
+
+* Delivery:
+
+  * zones
+  * delivery fees
+
+* Payment:
+
+  * Cash on delivery (start)
+  * Later: Stripe / Paymob
+
+---
+
+# 🚀 PHASE 9 — ORDER SYSTEM
+
+Tasks:
+
+* Save order to Firebase
+* Order schema:
+
+{
+customer,
+items,
+total_price,
+status,
+created_at
+}
+
+---
+
+# 🚀 PHASE 10 — ADMIN DASHBOARD
+
+Purpose:
+Full control panel
+
+Features:
+
+## Products
+
+* Add / edit / delete
+* Upload images (Cloudinary)
+
+## Orders
+
+* View orders
+* Change status
+
+## Inventory
+
+* Update stock
+
+## Delivery
+
+* Manage zones
+* Set prices
+
+---
+
+# 🚀 PHASE 11 — ANALYTICS SYSTEM (SUPABASE)
+
+Event Tracking:
+
+Track:
+
+* product_view
+* add_to_cart
+* checkout_started
+* order_created
+
+Event Schema:
+{
+event_type,
+user_id,
+product_id,
+timestamp
+}
+
+---
+
+# 🚀 PHASE 12 — REPORTS DASHBOARD
+
+Using Supabase:
+
+Reports:
+
+* Most viewed products
+* Conversion rate
+* Sales per day
+* Top customers
+
+---
+
+# 🚀 PHASE 13 — PERFORMANCE OPTIMIZATION
+
+Tasks:
+
+* Image optimization (Cloudinary)
+* Lazy loading
+* Caching
+* Pagination everywhere
+
+---
+
+# 🚀 PHASE 14 — SECURITY
+
+Tasks:
+
+* Firebase rules
+* Validate inputs
+* Protect APIs
+
+---
+
+# 🚀 PHASE 15 — FINAL POLISH
+
+Tasks:
+
+* Error handling
+* Loading states
+* Empty states
+* Logs
+
+---
+
+# 💣 IMPORTANT RULES
+
+* NEVER fetch all products
+* ALWAYS use pagination
+* NEVER store images in Firebase
+* KEEP analytics separate in Supabase
+* BUILD functionality first, design later
+
+---
+
+# 🎯 FINAL RESULT
+
+A complete ecommerce system with:
+
+* Fast frontend
+* Scalable backend
+* Full admin control
+* Advanced analytics
+
+READY FOR SCALING 🚀

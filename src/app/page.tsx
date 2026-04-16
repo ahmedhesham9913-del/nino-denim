@@ -8,14 +8,28 @@ import BrandStory from "@/components/BrandStory";
 import SocialProof from "@/components/SocialProof";
 import Newsletter from "@/components/Newsletter";
 import Footer from "@/components/Footer";
+import { getProducts } from "@/services/products";
+import type { Product } from "@/lib/types";
 
-export default function Home() {
+export default async function Home() {
+  let products: Product[] = [];
+  try {
+    const result = await getProducts({ pageSize: 6 });
+    // Serialize Firestore Timestamps to plain objects for client components
+    products = result.items.map((p) => ({
+      ...p,
+      created_at: JSON.parse(JSON.stringify(p.created_at)),
+    }));
+  } catch {
+    products = [];
+  }
+
   return (
     <>
       <main>
         <Hero />
         <Marquee />
-        <ProductCards />
+        <ProductCards products={products} />
         <EditorialLookbook />
         <FeaturedCollection />
         <DenimJourney />

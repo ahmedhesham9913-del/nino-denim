@@ -1,90 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { motion, useInView } from "framer-motion";
-
-interface Product {
-  id: number;
-  name: string;
-  category: string;
-  price: number;
-  originalPrice: number;
-  colors: string[];
-  sizes: string[];
-  tag?: string;
-  image: string;
-  featured?: boolean;
-}
-
-const products: Product[] = [
-  {
-    id: 1,
-    name: "Classic Straight",
-    category: "Men's Denim",
-    price: 79,
-    originalPrice: 110,
-    colors: ["#2563eb", "#1e293b", "#78716c"],
-    sizes: ["28", "30", "32", "34"],
-    tag: "BESTSELLER",
-    image: "https://images.pexels.com/photos/1082529/pexels-photo-1082529.jpeg?auto=compress&cs=tinysrgb&w=800",
-    featured: true,
-  },
-  {
-    id: 2,
-    name: "Slim Fit Pro",
-    category: "Men's Denim",
-    price: 89,
-    originalPrice: 129,
-    colors: ["#1e293b", "#2563eb", "#0f172a"],
-    sizes: ["28", "30", "32", "34"],
-    tag: "NEW",
-    image: "https://images.pexels.com/photos/17745134/pexels-photo-17745134.jpeg?auto=compress&cs=tinysrgb&w=800",
-  },
-  {
-    id: 3,
-    name: "High Rise Sculpt",
-    category: "Women's Denim",
-    price: 95,
-    originalPrice: 135,
-    colors: ["#2563eb", "#0f172a", "#475569"],
-    sizes: ["24", "26", "28", "30"],
-    image: "https://images.pexels.com/photos/4210866/pexels-photo-4210866.jpeg?auto=compress&cs=tinysrgb&w=800",
-  },
-  {
-    id: 4,
-    name: "Relaxed Taper",
-    category: "Unisex Denim",
-    price: 85,
-    originalPrice: 120,
-    colors: ["#78716c", "#1e293b", "#2563eb"],
-    sizes: ["28", "30", "32", "36"],
-    tag: "TRENDING",
-    image: "https://images.pexels.com/photos/6786614/pexels-photo-6786614.jpeg?auto=compress&cs=tinysrgb&w=800",
-  },
-  {
-    id: 5,
-    name: "Bootcut Revival",
-    category: "Women's Denim",
-    price: 92,
-    originalPrice: 125,
-    colors: ["#0f172a", "#2563eb", "#78716c"],
-    sizes: ["24", "26", "28", "30"],
-    image: "https://images.pexels.com/photos/17630811/pexels-photo-17630811.jpeg?auto=compress&cs=tinysrgb&w=800",
-    featured: true,
-  },
-  {
-    id: 6,
-    name: "Cargo Wide Leg",
-    category: "Men's Denim",
-    price: 105,
-    originalPrice: 150,
-    colors: ["#2563eb", "#475569", "#1e293b"],
-    sizes: ["30", "32", "34", "36"],
-    tag: "LIMITED",
-    image: "https://images.unsplash.com/photo-1598554747436-c9293d6a588f?w=800&q=80",
-  },
-];
+import type { Product } from "@/lib/types";
+import SkeletonProductCard from "./SkeletonProductCard";
 
 function ProductCard({ product, index }: { product: Product; index: number }) {
   const [isHovered, setIsHovered] = useState(false);
@@ -99,10 +20,48 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
     setMousePos({ x, y });
   };
 
-  const isFeatured = product.featured;
+  const isFeatured = index === 0 || index === 4;
   const tiltStrength = isFeatured ? 5 : 8;
 
+  // Use mainImage; fall back to first variant image for old-schema products
+  const mainImage = product.mainImage
+    ?? product.variants?.[0]?.images?.[0]
+    ?? "";
+
+  // Derive colors from variants (new schema) with graceful fallback
+  const colors = useMemo(() => {
+    if (product.variants && product.variants.length > 0) {
+      return product.variants.map((v) => ({ name: v.colorName, hex: v.colorHex }));
+    }
+    return [];
+  }, [product.variants]);
+
+  // Derive sizes from variants
+  const sizes = useMemo(() => {
+    if (product.variants && product.variants.length > 0) {
+      const seen = new Set<string>();
+      const result: string[] = [];
+      for (const v of product.variants) {
+        for (const s of v.sizes) {
+          if (!seen.has(s.value)) {
+            seen.add(s.value);
+            result.push(s.value);
+          }
+        }
+      }
+      return result;
+    }
+    return [];
+  }, [product.variants]);
+
+  // Conditional discount: only show when tag === "Sale"
+  const isSale = product.tag === "Sale";
+  const discount = isSale && product.originalPrice > product.price
+    ? Math.round((1 - product.price / product.originalPrice) * 100)
+    : 0;
+
   return (
+    <Link href={product.id ? `/product/${product.id}` : "#"}>
     <motion.div
       ref={cardRef}
       className={`perspective-1000 group ${isFeatured ? "sm:col-span-2 sm:row-span-2" : ""}`}
@@ -141,7 +100,7 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
           >
             <Image
-              src={product.image}
+              src={mainImage}
               alt={product.name}
               fill
               sizes={isFeatured ? "(max-width: 640px) 100vw, 66vw" : "(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"}
@@ -191,12 +150,14 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
               </h3>
             </div>
             <div className="text-right">
-              <div className={`font-[var(--font-display)] font-bold text-nino-600 ${isFeatured ? "text-2xl" : "text-lg"}`}>
+              <div className={`font-[var(--font-display)] font-bold ${discount > 0 ? "text-red-600" : "text-nino-600"} ${isFeatured ? "text-2xl" : "text-lg"}`}>
                 ${product.price}
               </div>
-              <div className="text-xs text-nino-800/20 line-through">
-                ${product.originalPrice}
-              </div>
+              {discount > 0 && (
+                <div className="text-xs text-nino-800/20 line-through">
+                  ${product.originalPrice}
+                </div>
+              )}
             </div>
           </div>
 
@@ -208,43 +169,47 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
             <div className="overflow-hidden">
               <div className={`${isFeatured ? "pt-5 pb-6" : "pt-4 pb-5"}`}>
                 {/* Sizes */}
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">
-                    SIZE
-                  </span>
-                  <div className="flex gap-1.5">
-                    {product.sizes.map((size, si) => (
-                      <button
-                        key={size}
-                        className={`min-w-[32px] h-[30px] rounded-lg text-[11px] font-[var(--font-display)] font-semibold transition-colors duration-200 ${
-                          si === 0
-                            ? "bg-nino-950 text-white"
-                            : "bg-nino-100/60 text-nino-800/50 hover:bg-nino-200/60 hover:text-nino-800/80"
-                        }`}
-                      >
-                        {size}
-                      </button>
-                    ))}
+                {sizes.length > 0 && (
+                  <div className="flex items-center gap-2 mb-3">
+                    <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">
+                      SIZE
+                    </span>
+                    <div className="flex gap-1.5">
+                      {sizes.map((size, si) => (
+                        <button
+                          key={size}
+                          className={`min-w-[32px] h-[30px] rounded-lg text-[11px] font-[var(--font-display)] font-semibold transition-colors duration-200 ${
+                            si === 0
+                              ? "bg-nino-950 text-white"
+                              : "bg-nino-100/60 text-nino-800/50 hover:bg-nino-200/60 hover:text-nino-800/80"
+                          }`}
+                        >
+                          {size}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Colors */}
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">
-                    COLOR
-                  </span>
-                  <div className="flex gap-2">
-                    {product.colors.map((color, ci) => (
-                      <div
-                        key={ci}
-                        className={`w-5 h-5 rounded-full border-2 cursor-pointer transition-transform duration-200 hover:scale-125 ${
-                          ci === 0 ? "border-nino-500/50 scale-110" : "border-nino-200/60"
-                        }`}
-                        style={{ backgroundColor: color }}
-                      />
-                    ))}
+                {colors.length > 0 && (
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="text-[10px] tracking-[0.2em] text-nino-800/30 font-[var(--font-display)] font-semibold">
+                      COLOR
+                    </span>
+                    <div className="flex gap-2">
+                      {colors.map((color, ci) => (
+                        <div
+                          key={color.name}
+                          className={`w-5 h-5 rounded-full border-2 cursor-pointer transition-transform duration-200 hover:scale-125 ${
+                            ci === 0 ? "border-nino-500/50 scale-110" : "border-nino-200/60"
+                          }`}
+                          style={{ backgroundColor: color.hex }}
+                        />
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
 
                 {/* Buy button */}
                 <button
@@ -265,12 +230,12 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
           >
             <div className="overflow-hidden">
               <div className="flex gap-2.5 pb-5">
-                {product.colors.map((color, ci) => (
+                {colors.map((color, ci) => (
                   <div
-                    key={ci}
+                    key={color.name}
                     className={`rounded-full border ${isFeatured ? "w-5 h-5" : "w-4 h-4"}`}
                     style={{
-                      backgroundColor: color,
+                      backgroundColor: color.hex,
                       borderColor: ci === 0 ? "oklch(0.58 0.20 240 / 0.5)" : "oklch(0.88 0.02 240)",
                     }}
                   />
@@ -281,12 +246,14 @@ function ProductCard({ product, index }: { product: Product; index: number }) {
         </div>
       </motion.div>
     </motion.div>
+    </Link>
   );
 }
 
-export default function ProductCards() {
+export default function ProductCards({ products: propProducts }: { products?: Product[] }) {
   const sectionRef = useRef<HTMLDivElement>(null);
   const titleInView = useInView(sectionRef, { once: true, margin: "-100px" });
+  const displayProducts = propProducts && propProducts.length > 0 ? propProducts : [];
 
   return (
     <section
@@ -338,9 +305,13 @@ export default function ProductCards() {
       </div>
 
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 auto-rows-auto">
-        {products.map((product, i) => (
-          <ProductCard key={product.id} product={product} index={i} />
-        ))}
+        {displayProducts.length > 0
+          ? displayProducts.map((product, i) => (
+              <ProductCard key={product.id ?? i} product={product} index={i} />
+            ))
+          : Array.from({ length: 6 }).map((_, i) => (
+              <SkeletonProductCard key={i} featured={i === 0 || i === 4} />
+            ))}
       </div>
 
       <div className="max-w-[1400px] mx-auto mt-28">

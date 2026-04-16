@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/extensions/git/scripts/powershell/create-new-feature.ps1 -Json -ShortName \"backend-foundation\" \"Setup project backend foundation - Firebase, Cloudinary, Supabase integration\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -PathsOnly)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/setup-plan.ps1 -Json)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/update-agent-context.ps1 -AgentType claude)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/scripts/powershell/check-prerequisites.ps1 -Json -RequireTasks -IncludeTasks)",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "mcp__plugin_supabase_supabase__list_projects",
+      "mcp__plugin_supabase_supabase__apply_migration",
+      "mcp__plugin_supabase_supabase__execute_sql",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/extensions/git/scripts/powershell/create-new-feature.ps1 -Json -ShortName \"storefront-integration\" \"Wire landing page, shop page, and product page to Firebase backend with real data and dynamic routing\")",
+      "Bash(npx tsx:*)",
+      "Bash(npx tsc:*)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(echo \"EXIT_CODE=$?\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/extensions/git/scripts/powershell/create-new-feature.ps1 -Json -ShortName \"cart-checkout-orders\" \"Cart system, checkout flow, and order management — phases 7-9 from plan.md\")",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/extensions/git/scripts/powershell/create-new-feature.ps1 -Json -ShortName \"admin-analytics-reports\" \"Admin dashboard, analytics system, and reports dashboard — phases 10-12 from plan.md\")",
+      "Bash(mkdir -p src/app/admin/products/new)",
+      "Bash(mkdir -p \"src/app/admin/products/[id]/edit\")",
+      "Bash(mkdir -p src/app/admin/orders)",
+      "Bash(mkdir -p src/app/admin/inventory)",
+      "Bash(mkdir -p src/app/admin/delivery)",
+      "Bash(sed:*)",
+      "Bash(powershell -ExecutionPolicy Bypass -File .specify/extensions/git/scripts/powershell/create-new-feature.ps1 -Json -ShortName \"perf-security-polish\" \"Performance optimization, security with Firebase Auth, and final polish — phases 13-15 from plan.md\")",
+      "Bash(grep -n '<button$\\\\|<button ' \"D:\\\\Molger Github\\\\Molger Website\\\\nino-jeans\\\\src\\\\components\\\\admin\\\\VariantCard.tsx\")"
+    ]
+  }
+}

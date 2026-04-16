@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Outfit, DM_Sans } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
+import ConditionalNavbar from "@/components/ConditionalNavbar";
+import PageViewTracker from "@/components/PageViewTracker";
 
 const outfit = Outfit({
   variable: "--font-display",
@@ -29,7 +30,8 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${outfit.variable} ${dmSans.variable} antialiased`}>
       <body className="min-h-screen">
-        <Navbar />
+        <ConditionalNavbar />
+        <PageViewTracker />
         {children}
       </body>
     </html>
